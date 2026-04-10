@@ -37,6 +37,7 @@ export default function Communities() {
   const [activeTab, setActiveTab] = useState('feed'); 
   const [viewingProfileId, setViewingProfileId] = useState(null);
   const [activeThreadId, setActiveThreadId] = useState(null); // UID of user we are chatting with
+  const [activeCommunityChat, setActiveCommunityChat] = useState(null);
   
   // Modals
   const [reportModalData, setReportModalData] = useState(null);
@@ -223,14 +224,36 @@ export default function Communities() {
   const totalUnread = Object.values(unreadMsgDict).reduce((acc, count) => acc + count, 0);
 
   return (
-    <div style={styles.dashboardContainer} className="container">
-      <nav style={styles.topNav}>
-         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-             <img src="/logo-dark.png" alt="P2P HUB Logo" style={{ height: '44px', objectFit: 'contain', display: 'block' }} />
-             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '0.05em', lineHeight: '44px', margin: 0 }}>P2P HUB</h3>
+    <div style={{ display: 'flex', width: '100%', minHeight: '100vh', backgroundColor: 'var(--color-bg-primary)' }}>
+      {/* GLOBAL SIDEBAR */}
+      <div style={{ width: '250px', flexShrink: 0, borderRight: '1px solid rgba(0,0,0,0.1)', backgroundColor: 'rgba(0,0,0,0.02)', padding: '32px 0', display: 'flex', flexDirection: 'column' }}>
+         <div style={{ padding: '0 24px', marginBottom: '40px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+             <img src="/logo-dark.png" alt="P2P HUB Logo" style={{ height: '36px', objectFit: 'contain', display: 'block' }} />
+             <h3 style={{ fontSize: '1.25rem', fontWeight: 700, letterSpacing: '0.05em', lineHeight: '36px', margin: 0 }}>P2P HUB</h3>
          </div>
-         <div style={styles.navLinks}>
-           {['feed', 'discover', 'messages', 'profile'].map(tab => (
+         <div style={{ padding: '0 16px' }}>
+             <h4 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', marginBottom: '16px', color: 'var(--color-text-secondary)', paddingLeft: '8px' }}>YOUR HUBS</h4>
+             {myJoinedNames.length === 0 && <p style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', paddingLeft: '8px' }}>Join hubs in Discover.</p>}
+             {myJoinedNames.map(hub => (
+                <button 
+                  key={hub} 
+                  onClick={() => { setActiveTab('community-chat'); setActiveCommunityChat(hub); }} 
+                  style={{ display: 'flex', alignItems: 'center', width: '100%', textAlign: 'left', padding: '12px 16px', borderRadius: '8px', border: 'none', background: activeTab === 'community-chat' && activeCommunityChat === hub ? 'rgba(0,0,0,0.05)' : 'transparent', fontWeight: 600, fontSize: '0.875rem', marginBottom: '4px', cursor: 'pointer', transition: 'background 0.2s' }}
+                >
+                  <span style={{ color: 'var(--color-text-secondary)', marginRight: '12px', fontSize: '1.1rem' }}>#</span>
+                  {hub}
+                </button>
+             ))}
+         </div>
+      </div>
+
+      {/* DASHBOARD CONTAINER */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={styles.dashboardContainer} className="container">
+          <nav style={styles.topNav}>
+             <div></div>
+             <div style={styles.navLinks}>
+               {['feed', 'discover', 'messages', 'profile'].map(tab => (
              <button 
                key={tab} 
                style={{ ...styles.navTab, ...(activeTab === tab ? styles.navTabActive : {}) }} 
@@ -311,6 +334,10 @@ export default function Communities() {
 
         {activeTab === 'messages' && (
            <MessagesInbox myProfile={myProfile} myUid={user.uid} activeThreadId={activeThreadId} setActiveThreadId={setActiveThreadId} viewAuthor={viewAuthor} />
+        )}
+
+        {activeTab === 'community-chat' && activeCommunityChat && (
+           <CommunityChatThread communityName={activeCommunityChat} myUid={user.uid} viewAuthor={viewAuthor} />
         )}
 
         {activeTab === 'profile' && (
@@ -502,6 +529,8 @@ export default function Communities() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
@@ -611,6 +640,94 @@ const CommentRow = ({ comment }) => {
 // -------------------------------------------------------------
 // MESSAGES INBOX (1-to-1 Discord routing style)
 // -------------------------------------------------------------
+const CommunityChatThread = ({ communityName, myUid, viewAuthor }) => {
+  const threadId = `hub_${communityName}`;
+  const [messagesSnap] = useCollection(query(collection(db, 'messages'), where('thread_id', '==', threadId)));
+  const [text, setText] = useState('');
+  const [msgImage, setMsgImage] = useState(null);
+  const [isSending, setIsSending] = useState(false);
+  
+  const endRef = useRef(null);
+  const messagesUnsorted = messagesSnap ? messagesSnap.docs.map(d => ({id: d.id, ...d.data()})) : [];
+  const messages = messagesUnsorted.sort((a,b) => a.created_at - b.created_at);
+
+  useEffect(() => {
+     endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const sendMsg = async (e) => {
+    e.preventDefault();
+    if ((!text.trim() && !msgImage)) return;
+    if (msgImage && msgImage.size > 5 * 1024 * 1024) return alert("Image size exceeds 5MB firewall limit.");
+    
+    setIsSending(true);
+    let imageUrl = '';
+    if (msgImage) {
+       try { imageUrl = await uploadToImgBB(msgImage); } catch (err) { setIsSending(false); return alert("ImgBB Server Error: " + err.message); }
+    }
+
+    await addDoc(collection(db, 'messages'), {
+       thread_id: threadId,
+       sender_id: myUid,
+       text: text,
+       image_url: imageUrl,
+       created_at: Date.now()
+    });
+    setText('');
+    setMsgImage(null);
+    setIsSending(false);
+  }
+
+  return (
+    <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '800px', padding: 0, overflow: 'hidden' }}>
+      <div style={{ padding: '24px', borderBottom: '1px solid rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'var(--color-bg-secondary)' }}>
+         <h2 className="heading-sm" style={{ margin: 0, fontSize: '1.25rem' }}># {communityName}</h2>
+         <span style={{ fontSize: '0.75rem', color: 'var(--color-text-secondary)', marginLeft: 'auto' }}>PUBLIC HUB LINK</span>
+      </div>
+      <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', backgroundColor: 'var(--color-bg-primary)' }}>
+         {messages.length === 0 && <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)', marginTop: '40px' }}>Welcome to the {communityName} Hub. Be the first to establish a secure link.</p>}
+         {messages.map((m, index) => {
+            const isMe = m.sender_id === myUid;
+            const appendTail = index === messages.length - 1 || messages[index+1].sender_id !== m.sender_id;
+            return <MessageBubble key={m.id} msg={m} isMe={isMe} viewAuthor={viewAuthor} appendTail={appendTail} />;
+         })}
+         <div ref={endRef} />
+      </div>
+      <div style={{ padding: '24px', borderTop: '1px solid rgba(0,0,0,0.1)', backgroundColor: 'var(--color-bg-secondary)' }}>
+         {msgImage && (
+            <div style={{ marginBottom: '12px', position: 'relative', display: 'inline-block' }}>
+               <img src={URL.createObjectURL(msgImage)} alt="preview" style={{ height: '60px', borderRadius: '8px', objectFit: 'cover' }} />
+               <button type="button" onClick={() => setMsgImage(null)} style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'red', color: 'white', borderRadius: '50%', width:'20px', height:'20px', border:'none', cursor:'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold' }}>×</button>
+            </div>
+         )}
+         <form onSubmit={sendMsg} style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+           <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '8px', color: 'var(--color-text-secondary)', transition: 'color 0.2s' }}>
+             <ImageIcon size={24} />
+             <input type="file" accept="image/*" onChange={e => setMsgImage(e.target.files[0])} style={{ display: 'none' }} />
+           </label>
+           <input type="text" placeholder={`Message #${communityName}...`} value={text} onChange={e=>setText(e.target.value)} style={{ ...styles.input, padding: '12px 16px', backgroundColor: 'var(--color-bg-primary)' }} />
+           <button type="submit" className="btn btn-primary" style={{ padding: '0 24px' }} disabled={isSending}>
+              {isSending ? '...' : <Send size={16} />}
+           </button>
+         </form>
+      </div>
+    </div>
+  )
+}
+
+const MessageBubble = ({ msg, isMe, viewAuthor, appendTail }) => {
+  const [author] = useDocumentData(doc(db, 'users', msg.sender_id));
+  return (
+     <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', marginBottom: appendTail ? '8px' : '2px' }}>
+         {!isMe && appendTail && <div style={{ fontSize: '0.75rem', fontWeight: 700, marginBottom: '4px', cursor: 'pointer', color: 'var(--color-text-secondary)' }} onClick={() => viewAuthor(msg.sender_id)}>{author ? author.anonymous_username : 'Agent'}</div>}
+         <div style={{ maxWidth: '70%', padding: '10px 16px', borderRadius: '12px', backgroundColor: isMe ? 'var(--color-accent)' : 'rgba(0,0,0,0.05)', color: isMe ? 'white' : 'black', fontSize: '0.9rem', borderBottomRightRadius: isMe && appendTail ? '4px' : '12px', borderBottomLeftRadius: !isMe && appendTail ? '4px' : '12px' }}>
+             {msg.image_url && <img src={msg.image_url} alt="attachment" style={{ width: '100%', borderRadius: '8px', marginBottom: msg.text ? '8px' : '0' }} />}
+             {msg.text && <span>{msg.text}</span>}
+         </div>
+     </div>
+  )
+}
+
 const MessagesInbox = ({ myProfile, myUid, activeThreadId, setActiveThreadId, viewAuthor }) => {
   const activeChats = myProfile?.active_chats || [];
   const unreadMsgDict = myProfile?.unread_counts || {};
