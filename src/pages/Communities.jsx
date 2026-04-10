@@ -310,11 +310,11 @@ export default function Communities() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
                <div style={{ display: 'flex', gap: '32px' }}>
                   {myProfile.photoURL ? (
-                     <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(0,0,0,0.1)' }}>
+                     <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(0,0,0,0.1)', flexShrink: 0 }}>
                         <img src={myProfile.photoURL} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                      </div>
                   ) : (
-                     <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '2rem' }}>
+                     <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '2rem', flexShrink: 0 }}>
                         {myProfile.anonymous_username?.slice(-2) || 'XX'}
                      </div>
                   )}
@@ -334,7 +334,7 @@ export default function Communities() {
             {isEditing ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '32px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
                        {newAvatarFile ? <img src={URL.createObjectURL(newAvatarFile)} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (myProfile.photoURL ? <img src={myProfile.photoURL} alt="existing" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <ImageIcon size={24} />)}
                     </div>
                     <div>
@@ -436,11 +436,11 @@ export default function Communities() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
                <div style={{ display: 'flex', gap: '32px' }}>
                   {viewingProfile.photoURL ? (
-                     <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(0,0,0,0.1)' }}>
+                     <div style={{ width: '120px', height: '120px', borderRadius: '50%', overflow: 'hidden', border: '2px solid rgba(0,0,0,0.1)', flexShrink: 0 }}>
                         <img src={viewingProfile.photoURL} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                      </div>
                   ) : (
-                     <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '2rem' }}>
+                     <div style={{ width: '120px', height: '120px', borderRadius: '50%', backgroundColor: 'rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '2rem', flexShrink: 0 }}>
                         {viewingProfile.anonymous_username?.slice(-2) || 'XX'}
                      </div>
                   )}
