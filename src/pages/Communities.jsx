@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { auth, db, COMMUNITIES_MAP } from '../firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useDocumentData, useCollection, useCollectionData } from 'react-firebase-hooks/firestore';
-import { collection, doc, setDoc, query, orderBy, addDoc, updateDoc, arrayUnion, arrayRemove, where, deleteDoc } from 'firebase/firestore';
+import { collection, doc, setDoc, query, orderBy, addDoc, updateDoc, arrayUnion, arrayRemove, where, deleteDoc, increment } from 'firebase/firestore';
 import { MessageSquare, Heart, Flag, ShieldAlert, Edit3, UserX, LogOut, ChevronDown, ChevronUp, Send, Image as ImageIcon, Monitor, BrainCircuit, Camera, Trophy, Headphones, Flame, Rocket, Gamepad2, Dumbbell, BookOpen, PenTool, Mic } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -219,6 +219,9 @@ export default function Communities() {
     navigate('/auth');
   };
 
+  const unreadMsgDict = myProfile?.unread_counts || {};
+  const totalUnread = Object.values(unreadMsgDict).reduce((acc, count) => acc + count, 0);
+
   return (
     <div style={styles.dashboardContainer} className="container">
       <nav style={styles.topNav}>
@@ -232,7 +235,12 @@ export default function Communities() {
                key={tab} 
                style={{ ...styles.navTab, ...(activeTab === tab ? styles.navTabActive : {}) }} 
                onClick={() => setActiveTab(tab)}>
-               {tab.toUpperCase()}
+               <div style={{ position: 'relative', display: 'inline-block' }}>
+                 {tab.toUpperCase()}
+                 {tab === 'messages' && totalUnread > 0 && (
+                    <span style={{ position: 'absolute', top: '-10px', right: '-18px', background: 'red', color: 'white', borderRadius: '12px', padding: '2px 6px', fontSize: '0.65rem', fontWeight: 800 }}>{totalUnread}</span>
+                 )}
+               </div>
                {activeTab === tab && <div style={{ height: '2px', backgroundColor: 'var(--color-accent)', position: 'absolute', bottom: -8, left: 0, right: 0 }} />}
              </button>
            ))}
@@ -605,6 +613,7 @@ const CommentRow = ({ comment }) => {
 // -------------------------------------------------------------
 const MessagesInbox = ({ myProfile, myUid, activeThreadId, setActiveThreadId, viewAuthor }) => {
   const activeChats = myProfile?.active_chats || [];
+  const unreadMsgDict = myProfile?.unread_counts || {};
   
   if (activeChats.length === 0) {
     return (
@@ -620,12 +629,12 @@ const MessagesInbox = ({ myProfile, myUid, activeThreadId, setActiveThreadId, vi
        <div style={{ width: '250px', borderRight: '1px solid rgba(0,0,0,0.1)', backgroundColor: 'rgba(0,0,0,0.02)', padding: '24px 0' }}>
          <h4 style={{ fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.1em', padding: '0 24px', marginBottom: '16px', color: 'var(--color-text-secondary)' }}>ACTIVE CHATS</h4>
          {activeChats.map(peerId => (
-            <InboxRow key={peerId} peerId={peerId} active={activeThreadId === peerId} onClick={() => setActiveThreadId(peerId)} />
+            <InboxRow key={peerId} peerId={peerId} active={activeThreadId === peerId} onClick={() => setActiveThreadId(peerId)} unreadCount={unreadMsgDict[peerId] || 0} />
          ))}
        </div>
        <div style={{ flex: 1, backgroundColor: 'var(--color-bg-primary)', display: 'flex', flexDirection: 'column' }}>
           {activeThreadId ? (
-            <ChatThread myUid={myUid} peerId={activeThreadId} viewAuthor={viewAuthor} />
+            <ChatThread myProfile={myProfile} myUid={myUid} peerId={activeThreadId} viewAuthor={viewAuthor} />
           ) : (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-secondary)' }}>
                <p>Select a thread to initialize messaging port.</p>
@@ -636,7 +645,7 @@ const MessagesInbox = ({ myProfile, myUid, activeThreadId, setActiveThreadId, vi
   )
 };
 
-const InboxRow = ({ peerId, active, onClick }) => {
+const InboxRow = ({ peerId, active, onClick, unreadCount }) => {
   const [peer] = useDocumentData(doc(db, 'users', peerId));
   return (
     <button onClick={onClick} style={{ width: '100%', padding: '16px 24px', display: 'flex', alignItems: 'center', gap: '12px', background: active ? 'rgba(0,0,0,0.05)' : 'none', border: 'none', borderLeft: active ? '3px solid var(--color-accent)' : '3px solid transparent', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s' }}>
@@ -648,11 +657,12 @@ const InboxRow = ({ peerId, active, onClick }) => {
          </div>
       )}
       <span style={{ fontSize: '0.875rem', fontWeight: 600, textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{peer ? peer.anonymous_username : 'Loading...'}</span>
+      {unreadCount > 0 && <span style={{ marginLeft: 'auto', background: 'red', color: 'white', fontSize: '0.75rem', padding: '2px 8px', borderRadius: '12px', fontWeight: 800 }}>{unreadCount}</span>}
     </button>
   )
 }
 
-const ChatThread = ({ myUid, peerId, viewAuthor }) => {
+const ChatThread = ({ myProfile, myUid, peerId, viewAuthor }) => {
   const threadId = myUid < peerId ? `${myUid}_${peerId}` : `${peerId}_${myUid}`;
   const [messagesSnap] = useCollection(query(collection(db, 'messages'), where('thread_id', '==', threadId)));
   const [peer] = useDocumentData(doc(db, 'users', peerId));
@@ -667,6 +677,14 @@ const ChatThread = ({ myUid, peerId, viewAuthor }) => {
   useEffect(() => {
      endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+     if (myProfile?.unread_counts?.[peerId]) {
+         updateDoc(doc(db, 'users', myUid), { 
+             [`unread_counts.${peerId}`]: 0 
+         }).catch(e => console.error(e));
+     }
+  }, [messages, peerId, myProfile, myUid]);
 
   const sendMsg = async (e) => {
     e.preventDefault();
@@ -691,6 +709,11 @@ const ChatThread = ({ myUid, peerId, viewAuthor }) => {
        image_url: imageUrl,
        created_at: Date.now()
     });
+
+    await updateDoc(doc(db, 'users', peerId), {
+       [`unread_counts.${myUid}`]: increment(1)
+    }).catch(e => console.error("Error setting notification: ", e));
+
     setText('');
     setMsgImage(null);
     setIsSending(false);
