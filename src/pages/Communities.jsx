@@ -7,6 +7,13 @@ import { collection, doc, setDoc, query, orderBy, addDoc, updateDoc, arrayUnion,
 import { MessageSquare, Heart, Flag, ShieldAlert, Edit3, UserX, LogOut, ChevronDown, ChevronUp, Send, Image as ImageIcon, Monitor, BrainCircuit, Camera, Trophy, Headphones, Flame, Rocket, Gamepad2, Dumbbell, BookOpen, PenTool, Mic } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
+const INTERESTS = [
+  'TECHNOLOGY', 'AI', 'MACHINE LEARNING', 'CODING', 'PHOTOGRAPHY', 'VIDEOGRAPHY',
+  'SPORTS', 'FOOTBALL', 'CRICKET', 'GYM', 'FITNESS', 'DANCE', 'MUSIC', 'SINGING',
+  'GUITAR', 'PIANO', 'ART', 'PAINTING', 'BUSINESS', 'STARTUPS', 'ENTREPRENEURSHIP',
+  'FINANCE', 'BOOKS', 'MOVIES', 'GAMING', 'ROBOTICS', 'PUBLIC SPEAKING', 'DESIGN', 'UI UX'
+];
+
 const IMGBB_API_KEY = "e915ba834131647636974697700450f7";
 const uploadToImgBB = async (imageFile) => {
   const formData = new FormData();
@@ -96,7 +103,7 @@ export default function Communities() {
       looking_to_learn: myProfile.looking_to_learn || '',
       bio: myProfile.bio || '',
       portfolio_links: myProfile.portfolio_links || '',
-      interests: myProfile.interests ? myProfile.interests.join(', ') : ''
+      interests: myProfile.interests || []
     });
     setNewAvatarFile(null);
     setIsEditing(true);
@@ -113,8 +120,7 @@ export default function Communities() {
          return alert("ImgBB Server Error: " + e.message);
        }
     }
-    const interestsArray = editForm.interests ? editForm.interests.split(',').map(s => s.trim().toUpperCase()).filter(s => s) : [];
-    const finalForm = { ...editForm, interests: interestsArray };
+    const finalForm = { ...editForm };
     await updateDoc(doc(db, 'users', user.uid), { ...finalForm, photoURL: finalPhotoUrl });
     setNewAvatarFile(null);
     setIsEditing(false);
@@ -339,7 +345,55 @@ export default function Communities() {
                     </div>
                   </div>
                   <SectionEdit label="Username" valKey="anonymous_username" state={editForm} setState={setEditForm} />
-                  <SectionEdit label="Tags / Interests (comma separated)" valKey="interests" state={editForm} setState={setEditForm} />
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Interests & Tags</label>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                      {Array.from(new Set([...INTERESTS, ...(editForm.interests || [])])).map(interest => {
+                        const isSelected = editForm.interests && editForm.interests.includes(interest);
+                        return (
+                          <button 
+                            key={interest} 
+                            type="button"
+                            onClick={() => {
+                              const newInterests = isSelected 
+                                ? editForm.interests.filter(i => i !== interest)
+                                : [...(editForm.interests || []), interest];
+                              setEditForm({...editForm, interests: newInterests});
+                            }}
+                            style={{
+                              padding: '6px 16px', 
+                              borderRadius: 'var(--radius-pill, 999px)', 
+                              border: '1px solid rgba(0,0,0,0.2)', 
+                              fontSize: '0.8rem', 
+                              fontWeight: 600, 
+                              cursor: 'pointer',
+                              backgroundColor: isSelected ? 'var(--color-accent)' : 'transparent',
+                              color: isSelected ? 'white' : 'inherit'
+                            }}
+                          >
+                            {interest}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <div style={{ marginTop: '16px' }}>
+                      <input 
+                        type="text" 
+                        placeholder="+ Add custom interest (press Enter)"
+                        style={{ ...styles.input, width: '100%', maxWidth: '300px', padding: '10px 16px' }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const val = e.target.value.trim().toUpperCase();
+                            if (val && !(editForm.interests || []).includes(val)) {
+                               setEditForm({...editForm, interests: [...(editForm.interests || []), val]});
+                               e.target.value = '';
+                            }
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
                   <SectionEdit label="Platform Objectives" valKey="objectives" state={editForm} setState={setEditForm} />
                   <SectionEdit label="Currently working on a project?" valKey="working_on" state={editForm} setState={setEditForm} />
                   <SectionEdit label="Skills / Expertise" valKey="skills" state={editForm} setState={setEditForm} />
