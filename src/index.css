@@ -1,0 +1,152 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap');
+
+:root {
+  --color-bg-primary: #DEDFDB; /* Sage/Beige Base */
+  --color-bg-secondary: #E9EAE5; /* Lighter Sage */
+  --color-bg-card: #F9F9F7;
+  --color-text-primary: #121212;
+  --color-text-secondary: #585855;
+  --color-accent: #111111; /* Pure Black Buttons */
+  --color-white: #FFFFFF;
+
+  --font-serif: 'Playfair Display', serif;
+  --font-sans: 'Inter', sans-serif;
+
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 12px 32px rgba(0, 0, 0, 0.06);
+
+  --radius-sm: 4px;
+  --radius-md: 16px;
+  --radius-lg: 32px;
+  --radius-pill: 100px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.1;
+}
+
+/* Emulating Brutalist Elegance */
+h1 { font-family: var(--font-serif); letter-spacing: -0.03em; }
+h2 { font-family: var(--font-sans); text-transform: uppercase; letter-spacing: -0.02em; }
+h3, h4 { font-family: var(--font-sans); letter-spacing: -0.01em; }
+
+button {
+  font-family: var(--font-sans); cursor: pointer; border: none; background: none; transition: all 0.2s ease;
+}
+
+a { text-decoration: none; color: inherit; transition: opacity 0.2s; }
+a:hover { opacity: 0.7; }
+input, textarea { font-family: var(--font-sans); transition: all 0.3s ease; }
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+.text-center { text-align: center; }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 14px 32px; border-radius: var(--radius-pill);
+  font-weight: 600; font-size: 0.875rem; text-transform: uppercase;
+  letter-spacing: 0.05em; text-decoration: none;
+}
+
+.btn-primary {
+  background-color: var(--color-accent); color: var(--color-white);
+}
+.btn-primary:hover {
+  background-color: #333; transform: translateY(-2px);
+}
+
+.btn-outline {
+  background-color: transparent; border: 1px solid var(--color-text-primary);
+  color: var(--color-text-primary);
+}
+.btn-outline:hover {
+  background-color: var(--color-text-primary); color: var(--color-white);
+}
+
+.card {
+  background: var(--color-bg-card); border-radius: var(--radius-md);
+  padding: 40px; border: 1px solid rgba(0,0,0,0.05);
+  box-shadow: none; transition: transform 0.3s ease;
+}
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+
+/* Typography */
+.heading-xl { font-size: 5rem; line-height: 1.0; font-weight: 700; }
+.heading-lg { font-size: 3.5rem; }
+.heading-md { font-size: 2.5rem; text-transform: none; font-family: var(--font-serif); }
+.heading-sm { font-size: 1.25rem; font-family: var(--font-sans); font-weight: 600; }
+.title-overline { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; display: block; margin-bottom: 16px; color: var(--color-text-primary); }
+
+@media (max-width: 768px) {
+  .heading-xl { font-size: 3rem; } .heading-lg { font-size: 2.5rem; } .heading-md { font-size: 2rem; }
+}
+
+.text-body-lg { font-size: 1.125rem; line-height: 1.8; }
+.text-body { font-size: 1rem; color: var(--color-text-primary); }
+.text-body-sm { font-size: 0.875rem; color: var(--color-text-secondary); }
+
+.tag {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 8px 20px; border-radius: var(--radius-pill);
+  background: transparent; font-size: 0.75rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-text-primary);
+  border: 1px solid rgba(0,0,0,0.1); transition: all 0.2s;
+}
+.tag:hover { border-color: var(--color-text-primary); }
+
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+@media (max-width: 1024px) { .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+.section-padding { padding: 120px 0; }
+
+/* Brutalist Discovery Classes */
+.hub-card {
+  border: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-white);
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 4px 4px 0 rgba(0,0,0,1);
+  display: flex;
+  flex-direction: column;
+}
+.hub-card:hover {
+  transform: translate(-4px, -4px);
+  box-shadow: 8px 8px 0 rgba(0,0,0,1);
+}
+.pill-btn {
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.pill-joined {
+  background-color: var(--color-accent);
+  color: var(--color-white);
+}
+.pill-unjoined {
+  background-color: transparent;
+  color: var(--color-accent);
+}
+.pill-unjoined:hover {
+  background-color: rgba(0,0,0,0.05);
+}
